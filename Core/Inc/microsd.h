@@ -37,9 +37,9 @@
 // TODO: add more verbose errors
 typedef enum
 {
-	MICROSD_SUCCESS = 0,
-	MICROSD_ERROR_UNABLE_TO_OPEN = -1,
-	MICROSD_ERROR = -15
+    MICROSD_SUCCESS = 0,
+    MICROSD_ERROR_UNABLE_TO_OPEN = -1,
+    MICROSD_ERROR = -15
 } microsd_ret_t;
 
 microsd_ret_t MicroSD_Open(SD_HandleTypeDef * handle);

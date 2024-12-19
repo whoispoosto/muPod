@@ -181,8 +181,8 @@ static void MX_SDIO_SD_Init(void)
   /* USER CODE BEGIN SDIO_Init 2 */
   if (MicroSD_Open(&hsd) != MICROSD_SUCCESS)
   {
-	  // TODO: research best practices for error handling on STM32
-	  Error_Handler();
+      // TODO: research best practices for error handling on STM32
+      Error_Handler();
   }
   /* USER CODE END SDIO_Init 2 */
 
