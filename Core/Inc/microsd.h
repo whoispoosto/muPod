@@ -42,7 +42,7 @@ typedef enum
     MICROSD_ERROR = -15
 } microsd_ret_t;
 
-microsd_ret_t MicroSD_Open(SD_HandleTypeDef * handle);
+microsd_ret_t MicroSD_Open(SD_HandleTypeDef* handle);
 microsd_ret_t MicroSD_Close();
 microsd_ret_t MicroSD_Read(uint8_t *buffer, size_t length, uint32_t address);
 microsd_ret_t MicroSD_Write(const uint8_t *buffer, size_t length, uint32_t address);
