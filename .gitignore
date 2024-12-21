@@ -63,6 +63,9 @@ local.properties
 # Typically, this file would be tracked if it contains build/dependency configurations:
 #.project
 
+# STM32 specific
+Debug/
+
 ### Eclipse Patch ###
 # Spring Boot Tooling
 .sts4-cache/
