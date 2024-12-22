@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "fatfs.h"
+#include "fs.h"
 
 // SD cards can run in two different modes: SPI or SDIO
 // https://stm32world.com/wiki/STM32_SD_card_with_FatFs
@@ -36,38 +37,11 @@
 
 //////
 
-// TODO: add more verbose errors
-typedef enum
-{
-    MICROSD_SUCCESS = 0,
-    MICROSD_ERROR_UNABLE_TO_INIT = -1,
-    MICROSD_ERROR_UNABLE_TO_CLOSE = -2,
-    MICROSD_ERROR_UNINITIALIZED = -3,
-    MICROSD_ERROR_UNABLE_TO_MOUNT_FATFS = -4,
-    MICROSD_ERROR_UNABLE_TO_OPEN_FILE = -5,
-    MICROSD_ERROR_UNABLE_TO_READ_FILE = -6,
-    MICROSD_ERROR_GENERIC = -15
-} microsd_ret_t;
+fs_ret_t MicroSD_Init();
+fs_ret_t MicroSD_Close();
+fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length);
+fs_ret_t MicroSD_GetInfo(fs_info_t *info);
 
-// https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/structhal__sd__cardinfotypedef.html
-typedef struct
-{
-    uint32_t block_size_b;  // bytes
-    uint32_t num_blocks;
-    uint32_t card_size_mb;  // megabytes
-} microsd_info_t;
-
-microsd_ret_t MicroSD_Init(); // same as Open
-microsd_ret_t MicroSD_Close();
-microsd_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length);
-// TODO: microsd_ret_t MicroSD_Write(const uint8_t *buffer, size_t length, uint32_t address);
-
-// ioctl methods
-// Note that we don't use the ioctl format b/c it's unnecessary bloat
-// It makes sense for Linux since they have a simple API that all works with files:
-// i.e., ioctl(fd, TCGETS, &options);
-// instead of our system, i.e., MicroSD_Init(&hsd);
-
-microsd_ret_t MicroSD_GetInfo(microsd_info_t *info);
+extern const fs_driver_t microsd_driver;
 
 #endif /* INC_MICROSD_H_ */

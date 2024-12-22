@@ -17,7 +17,7 @@ extern SD_HandleTypeDef hsd;
 #define DELAYED_MOUNT 0
 
 // NOTE: this should be called after the auto-generated STM32 code is run, i.e., in MX_SDIO_SD_Init
-microsd_ret_t MicroSD_Init()
+fs_ret_t MicroSD_Init()
 {
     // Due to some internal quirks with STM32's implementation of SDIO,
     // we must initialize the bus width to be 1-bit.
@@ -25,13 +25,13 @@ microsd_ret_t MicroSD_Init()
     hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
     if (HAL_SD_Init(&hsd) != HAL_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_INIT;
+        return FS_ERROR_UNABLE_TO_INIT;
     }
 
     // Now we can switch to 4-bit bus width
     if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_INIT;
+        return FS_ERROR_UNABLE_TO_INIT;
     }
 
     // Mount the FatFS file system
@@ -39,40 +39,40 @@ microsd_ret_t MicroSD_Init()
     // See http://elm-chan.org/fsw/ff/doc/mount.html
     if (f_mount(&SDFatFS, (TCHAR const*) SDPath, DELAYED_MOUNT) != FR_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_MOUNT_FATFS;
+        return FS_ERROR_UNABLE_TO_MOUNT_FATFS;
     }
 
-    return MICROSD_SUCCESS;
+    return FS_SUCCESS;
 }
 
-microsd_ret_t MicroSD_Close()
+fs_ret_t MicroSD_Close()
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
-        return MICROSD_ERROR_UNINITIALIZED;
+        return FS_ERROR_UNINITIALIZED;
     }
 
     if (HAL_SD_DeInit(&hsd) != HAL_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_CLOSE;
+        return FS_ERROR_UNABLE_TO_CLOSE;
     }
 
-    return MICROSD_SUCCESS;
+    return FS_SUCCESS;
 }
 
 // TODO: consider making void *buffer
-microsd_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
+fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
-        return MICROSD_ERROR_UNINITIALIZED;
+        return FS_ERROR_UNINITIALIZED;
     }
 
     // Open the file
     FIL file;
     if (f_open(&file, filename, FA_OPEN_EXISTING | FA_READ) != FR_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_OPEN_FILE;
+        return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
     // Read the file
@@ -81,27 +81,34 @@ microsd_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
     size_t bytes_read;
     if (f_read(&file, buffer, length, &bytes_read) != FR_OK)
     {
-        return MICROSD_ERROR_UNABLE_TO_READ_FILE;
+        return FS_ERROR_UNABLE_TO_READ_FILE;
     }
 
-    return MICROSD_SUCCESS;
+    return FS_SUCCESS;
 }
 
-microsd_ret_t MicroSD_GetInfo(microsd_info_t *info)
+fs_ret_t MicroSD_GetInfo(fs_info_t *info)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
-        return MICROSD_ERROR_UNINITIALIZED;
+        return FS_ERROR_UNINITIALIZED;
     }
 
-    microsd_info_t info_temp;
+    fs_info_t info_temp;
 
     info_temp.block_size_b = hsd.SdCard.BlockSize;
     info_temp.num_blocks = hsd.SdCard.BlockNbr;
-    info_temp.card_size_mb = (double) (info_temp.block_size_b
+    info_temp.fs_size_mb = (double) (info_temp.block_size_b
             / BYTES_TO_MEGABYTES) * info_temp.num_blocks;
 
     *info = info_temp;
 
-    return MICROSD_SUCCESS;
+    return FS_SUCCESS;
 }
+
+const fs_driver_t microsd_driver = {
+    .Init = MicroSD_Init,
+    .Close = MicroSD_Close,
+    .Read = MicroSD_Read,
+    .GetInfo = MicroSD_GetInfo,
+};

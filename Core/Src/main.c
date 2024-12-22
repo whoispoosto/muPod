@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "fs.h"
 #include "microsd.h"
 /* USER CODE END Includes */
 
@@ -47,7 +48,7 @@ SD_HandleTypeDef hsd;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
+const fs_driver_t *fs;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -112,6 +113,14 @@ int main(void)
     MX_SDIO_SD_Init();
     /* USER CODE BEGIN 2 */
     printf("Hello world!\n"); // TODO: remove
+
+    // Select the file system implementation to use
+    // This is fairly safe because if the implementation is not defined (i.e., microsd_driver), a compile-time error is thrown
+    fs = &microsd_driver;
+    if (fs->Init() != FS_SUCCESS)
+    {
+        Error_Handler();
+    }
     /* USER CODE END 2 */
 
     /* Infinite loop */
@@ -196,10 +205,7 @@ static void MX_SDIO_SD_Init(void)
     hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
     hsd.Init.ClockDiv = 0;
     /* USER CODE BEGIN SDIO_Init 2 */
-    if (MicroSD_Init() != MICROSD_SUCCESS)
-    {
-        Error_Handler();
-    }
+
     /* USER CODE END SDIO_Init 2 */
 
 }
