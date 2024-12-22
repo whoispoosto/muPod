@@ -196,7 +196,7 @@ static void MX_SDIO_SD_Init(void)
     hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
     hsd.Init.ClockDiv = 0;
     /* USER CODE BEGIN SDIO_Init 2 */
-    if (MicroSD_Init(&hsd) != MICROSD_SUCCESS)
+    if (MicroSD_Init() != MICROSD_SUCCESS)
     {
         Error_Handler();
     }
