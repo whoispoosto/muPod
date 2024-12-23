@@ -17,7 +17,7 @@ extern SD_HandleTypeDef hsd;
 #define DELAYED_MOUNT 0
 
 // NOTE: this should be called after the auto-generated STM32 code is run, i.e., in MX_SDIO_SD_Init
-fs_ret_t MicroSD_Init()
+fs_ret_t MicroSD_Init(void)
 {
     // Due to some internal quirks with STM32's implementation of SDIO,
     // we must initialize the bus width to be 1-bit.
@@ -45,7 +45,7 @@ fs_ret_t MicroSD_Init()
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_Close()
+fs_ret_t MicroSD_Close(void)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
