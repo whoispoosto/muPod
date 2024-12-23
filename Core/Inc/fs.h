@@ -12,6 +12,9 @@
 // See https://www.reddit.com/r/embedded/comments/1fraemy/writing_interfaces_in_c/
 // TODO: Consider pimpl (opaque ptr) pattern in the future
 
+#include <stdint.h>
+#include <stddef.h>
+
 typedef enum
 {
     FS_SUCCESS = 0,

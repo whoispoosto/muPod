@@ -98,17 +98,15 @@ fs_ret_t MicroSD_GetInfo(fs_info_t *info)
 
     info_temp.block_size_b = hsd.SdCard.BlockSize;
     info_temp.num_blocks = hsd.SdCard.BlockNbr;
-    info_temp.fs_size_mb = (double) (info_temp.block_size_b
-            / BYTES_TO_MEGABYTES) * info_temp.num_blocks;
+    info_temp.fs_size_mb =
+            (double) (info_temp.block_size_b / BYTES_TO_MEGABYTES)
+                    * info_temp.num_blocks;
 
     *info = info_temp;
 
     return FS_SUCCESS;
 }
 
-const fs_driver_t microsd_driver = {
-    .Init = MicroSD_Init,
-    .Close = MicroSD_Close,
-    .Read = MicroSD_Read,
-    .GetInfo = MicroSD_GetInfo,
-};
+const fs_driver_t microsd_driver =
+{ .Init = MicroSD_Init, .Close = MicroSD_Close, .Read = MicroSD_Read, .GetInfo =
+        MicroSD_GetInfo, };

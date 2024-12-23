@@ -8,8 +8,6 @@
 #ifndef INC_MICROSD_H_
 #define INC_MICROSD_H_
 
-#include <stdint.h>
-#include <stddef.h>
 #include "fatfs.h"
 #include "fs.h"
 
