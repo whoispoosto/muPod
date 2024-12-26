@@ -10,16 +10,22 @@
 audio_ret_t Wav_Init(void)
 {
     // TODO
+
+    return AUDIO_SUCCESS;
 }
 
 audio_ret_t Wav_Close(void)
 {
     // TODO
+
+    return AUDIO_SUCCESS;
 }
 
 audio_ret_t Wav_Play(uint8_t *buffer, size_t length)
 {
     // TODO
+
+    return AUDIO_SUCCESS;
 }
 
 const audio_driver_t wav_driver =
