@@ -66,6 +66,9 @@ local.properties
 # STM32 specific
 Debug/
 
+# MacOS
+.DS_Store
+
 ### Eclipse Patch ###
 # Spring Boot Tooling
 .sts4-cache/
