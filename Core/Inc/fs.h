@@ -39,7 +39,7 @@ typedef struct
 {
     fs_ret_t (*Init)(void);     // same as Open
     fs_ret_t (*Close)(void);
-    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length);
+    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length); // TODO: make const buffer
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
     // TODO: ioctl?
