@@ -1,7 +1,7 @@
 /*
  * codec.h
  *
- *  Created on: Dec 22, 2024
+ *  Created on: Jan 31, 2025
  *      Author: prestonmeek
  */
 
@@ -17,12 +17,11 @@ typedef enum
     CODEC_ERROR_GENERIC = -128
 } codec_ret_t; 
 
+// TODO:
 typedef struct
 {
-    codec_ret_t (*Init)(void);
-    codec_ret_t (*Close)(void);
+    codec_ret_t (*Encode)(uint8_t *dst, const uint8_t *src, size_t length);
     codec_ret_t (*Decode)(uint8_t *dst, const uint8_t *src, size_t length);
-    // TODO: ioctl?
-} codec_driver_t;
+} codec_t;
 
 #endif /* INC_CODEC_H_ */

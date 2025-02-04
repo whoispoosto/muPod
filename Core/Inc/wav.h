@@ -8,17 +8,11 @@
 #ifndef INC_WAV_H_
 #define INC_WAV_H_
 
-/*
- * TODO: ditch this design sort of
- * wav shouldn't be an "audio driver" type, it should be a codec type
- * and then the "audio driver" type will be something like I2S, direct DAC, etc.
- */
-#include "audio.h"
+#include "codec.h"
 
-audio_ret_t Wav_Init(void);
-audio_ret_t Wav_Close(void);
-audio_ret_t Wav_Play(uint8_t *buffer, size_t length);
+codec_ret_t WAV_Encode(uint8_t *dst, const uint8_t *src, size_t length);
+codec_ret_t WAV_Decode(uint8_t *dst, const uint8_t *src, size_t length);
 
-extern const audio_driver_t wav_driver;
+extern const codec_t wav_codec;
 
 #endif /* INC_WAV_H_ */

@@ -12,6 +12,24 @@
 // See https://www.reddit.com/r/embedded/comments/1fraemy/writing_interfaces_in_c/
 // TODO: Consider pimpl (opaque ptr) pattern in the future
 
+/*
+ * Drivers allow hardware peripherals to interact with software.
+ *
+ * In Linux, in user-space, all drivers can be interacted with via the common file interface.
+ * This includes open, read, write, etc.
+ * This is for user-driver interaction.
+ *
+ * In kernel-space, drivers have different interfaces.
+ * For example, network drivers vs. serial ports, etc.
+ * However, the interfaces tend to be pretty similar with functions like write, read, etc.
+ * BUT they often have specialized interfaces for what they are doing.
+ * See struct file_operations vs. struct net_device_ops
+ * This is for kernel-hardware interaction.
+ *
+ * For this project, we are essentially at the kernel-hardware level (although we don't have a full-on kernel).
+ * So, we have slightly altered interfaces for each type of driver!
+ */
+
 #include <stdint.h>
 #include <stddef.h>
 
@@ -35,14 +53,14 @@ typedef struct
     uint32_t fs_size_mb;    // megabytes
 } fs_info_t;
 
+
 typedef struct
 {
-    fs_ret_t (*Init)(void);     // same as Open
+    fs_ret_t (*Open)(void);     // same as Open
     fs_ret_t (*Close)(void);
-    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length); // TODO: make const buffer
+    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length);
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
-    // TODO: ioctl?
 } fs_driver_t;
 
 #endif /* INC_FS_H_ */

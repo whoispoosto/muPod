@@ -7,26 +7,27 @@
 
 #include "wav.h"
 
-audio_ret_t Wav_Init(void)
+codec_ret_t WAV_Encode(uint8_t *dst, const uint8_t *src, size_t length)
 {
-    // TODO
+    // Since WAV files are already uncompressed PCM, this is very straightforward
+    for (int i = 0; i < length; ++i)
+    {
+        dst[i] = src[i];
+    }
 
-    return AUDIO_SUCCESS;
+    return CODEC_SUCCESS;
 }
 
-audio_ret_t Wav_Close(void)
+codec_ret_t WAV_Decode(uint8_t *dst, const uint8_t *src, size_t length)
 {
-    // TODO
+    // Since WAV files are already uncompressed PCM, this is very straightforward
+    for (int i = 0; i < length; ++i)
+    {
+        dst[i] = src[i];
+    }
 
-    return AUDIO_SUCCESS;
+    return CODEC_SUCCESS;
 }
 
-audio_ret_t Wav_Play(uint8_t *buffer, size_t length)
-{
-    // TODO
-
-    return AUDIO_SUCCESS;
-}
-
-const audio_driver_t wav_driver =
-{ .Init = Wav_Init, .Close = Wav_Close, .Play = Wav_Play };
+const codec_t wav_codec =
+{ .Encode = WAV_Encode, .Decode = WAV_Decode };

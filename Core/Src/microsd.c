@@ -16,8 +16,10 @@ extern SD_HandleTypeDef hsd;
 #define BYTES_TO_MEGABYTES 1024 * 1024
 #define DELAYED_MOUNT 0
 
+// TODO: check for NULL pointers
+
 // NOTE: this should be called after the auto-generated STM32 code is run, i.e., in MX_SDIO_SD_Init
-fs_ret_t MicroSD_Init(void)
+fs_ret_t MicroSD_Open(void)
 {
     // Due to some internal quirks with STM32's implementation of SDIO,
     // we must initialize the bus width to be 1-bit.
@@ -108,5 +110,5 @@ fs_ret_t MicroSD_GetInfo(fs_info_t *info)
 }
 
 const fs_driver_t microsd_driver =
-{ .Init = MicroSD_Init, .Close = MicroSD_Close, .Read = MicroSD_Read, .GetInfo =
+{ .Open = MicroSD_Open, .Close = MicroSD_Close, .Read = MicroSD_Read, .GetInfo =
         MicroSD_GetInfo, };
