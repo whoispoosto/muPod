@@ -77,9 +77,18 @@ fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
         return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
-    // Read the file
-    // Length will equal *bytes_read when the return code is FR_OK
-    // See http://elm-chan.org/fsw/ff/doc/read.html
+    /*
+     * Read the file
+     * Length will equal *bytes_read when the return code is FR_OK
+     * See http://elm-chan.org/fsw/ff/doc/read.html
+     *
+     * Even if buffer is of type, say, uint32_t (4 bytes),
+     * f_read will work as intended.
+     * f_read uses a void *buf internally.
+     * But! Our buffer will simply read 4 bytes at a time.
+     * We just need to make sure the length is correct (i.e., it's the number of BYTES)
+     */
+
     size_t bytes_read;
     if (f_read(&file, buffer, length, &bytes_read) != FR_OK)
     {
