@@ -63,7 +63,7 @@ fs_ret_t MicroSD_Close(void)
 }
 
 // TODO: consider making void *buffer
-fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
+fs_ret_t MicroSD_Read(const char filename[], uint8_t *buffer, size_t length)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
@@ -98,7 +98,7 @@ fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length)
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_GetInfo(fs_info_t *info)
+fs_ret_t MicroSD_GetInfo(const fs_info_t *info)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {

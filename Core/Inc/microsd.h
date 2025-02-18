@@ -37,8 +37,8 @@
 
 fs_ret_t MicroSD_Open(void);
 fs_ret_t MicroSD_Close(void);
-fs_ret_t MicroSD_Read(char filename[], uint8_t *buffer, size_t length);
-fs_ret_t MicroSD_GetInfo(fs_info_t *info);
+fs_ret_t MicroSD_Read(const char filename[], uint8_t *buffer, size_t length);
+fs_ret_t MicroSD_GetInfo(const fs_info_t *info);
 
 extern const fs_driver_t microsd_driver;
 

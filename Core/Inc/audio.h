@@ -54,7 +54,7 @@ typedef struct
 {
     audio_ret_t (*Open)(void);
     audio_ret_t (*Close)(void);
-    audio_ret_t (*Stream)(void *buffer, size_t length);
+    audio_ret_t (*Stream)(const void *buffer, size_t length);
 } audio_driver_t;
 
 #endif /* INC_AUDIO_H_ */

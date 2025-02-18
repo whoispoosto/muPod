@@ -21,12 +21,12 @@ audio_ret_t I2S_Close(void) {
     return AUDIO_SUCCESS;
 }
 
-audio_ret_t I2S_Stream(void *buffer, size_t length) {
+audio_ret_t I2S_Stream(const void *buffer, size_t length) {
     if (buffer == NULL) {
         return AUDIO_ERROR_NULL_BUFFER;
     }
 
-    uint16_t *data = (uint16_t *)buffer;
+    const uint16_t *data = (const uint16_t *)buffer;
 
     if (HAL_I2S_Transmit_IT(&hi2s2, data, length) != HAL_OK) {
         return AUDIO_ERROR_UNABLE_TO_STREAM_BUFFER;

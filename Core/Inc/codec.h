@@ -17,7 +17,6 @@ typedef enum
     CODEC_ERROR_GENERIC = -128
 } codec_ret_t; 
 
-// TODO:
 typedef struct
 {
     codec_ret_t (*Encode)(uint8_t *dst, const uint8_t *src, size_t length);

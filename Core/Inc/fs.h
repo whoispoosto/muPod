@@ -58,7 +58,7 @@ typedef struct
 {
     fs_ret_t (*Open)(void);     // same as Open
     fs_ret_t (*Close)(void);
-    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length);
+    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length); // TODO: make void buff, let implementation handle size
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
 } fs_driver_t;
