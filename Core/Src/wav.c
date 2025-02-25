@@ -9,20 +9,24 @@
 
 #include <string.h>
 
-static file_t curr_file;
-static int file_already_opened = 0;
-
 // https://en.wikipedia.org/wiki/WAV
 // ** Data is stored in little-endian byte order. **
+
+typedef struct {
+    uint32_t file_size;         // Overall file size minus 8 bytes
+    uint16_t nbr_channels;      // Number of channels
+    uint32_t frequency;         // Sample rate (in hertz)
+    uint32_t bytes_per_sec;     // Number of bytes to read per second (Frequency * BytePerBloc)
+    uint16_t bytes_per_bloc;    // Number of bytes per block (NbrChannels * BitsPerSample / 8)
+    uint16_t bits_per_sample;   // Number of bits per sample
+
+} wav_metadata_t;
 
 #define WAV_HEADER_SIZE 44
 
 // Identifier « RIFF »  (0x52, 0x49, 0x46, 0x46)
 #define WAV_HEADER_RIFF_SIZE 4
 #define WAV_HEADER_RIFF { 0x52, 0x49, 0x46, 0x46 }
-
-// Overall file size minus 8 bytes
-#define WAV_HEADER_FILESIZE_SIZE 4
 
 // Format = « WAVE »
 #define WAV_HEADER_FILEFORMATID_SIZE 4
@@ -44,9 +48,28 @@ static int file_already_opened = 0;
 #define WAV_HEADER_FORMAT_PCM 1
 #define WAV_HEADER_FORMAT_IEEE754 3
 
-// NbrChannels
-// Number of channels
-#define WAV_HEADER_NBRCHANNELS_SIZE 2
+static file_t curr_file;
+static wav_metadata_t metadata;
+static int file_already_opened = 0;
+
+/*
+ * Macros are really interesting!
+ *
+ * You can do curr_file.field, and it automatically expands to get the actual field
+ *
+ * the do {} while (0) loop ensures that this block always works
+ * for example, if there wasn't the do while, and this was used in a single-line if,
+ * only the first line would run inside the if statement. The rest would always run!
+ * The do {} while (0) loop also scopes things nicely for the sake of local variables
+ *
+ * Linux kernel even does stuff like #define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
+ */
+#define STORE_METADATA_FIELD(field) \
+    do { \
+        uint8_t _STORE_METADATA_BUFFER[sizeof(metadata.field)]; \
+        curr_file.Read(curr_file.handle, _STORE_METADATA_BUFFER, sizeof(metadata.field)); \
+        memcpy(&metadata.field, _STORE_METADATA_BUFFER, sizeof(metadata.field)); \
+    } while (0)
 
 codec_ret_t WAV_Open(const file_t *file)
 {
@@ -68,14 +91,17 @@ codec_ret_t WAV_Open(const file_t *file)
     curr_file.Read(curr_file.handle, buffer, WAV_HEADER_RIFF_SIZE);
     const uint8_t riff[WAV_HEADER_RIFF_SIZE] = WAV_HEADER_RIFF;
 
+    // memcmp returns 0 when all bytes match
     if (memcmp(buffer, riff, WAV_HEADER_RIFF_SIZE) != 0)
     {
         return CODEC_ERROR_INVALID_FILE_FORMAT;
     }
 
     // Read the file size
-    // TODO: store this?
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FILESIZE_SIZE);
+    // curr_file.Read(curr_file.handle, buffer, sizeof(metadata.file_size));
+    // metadata.file_size = ((uint32_t *)buffer)[0];
+    // TODO: make sure macro works
+    STORE_METADATA_FIELD(file_size);
 
     // Read the file format identifier
     curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FILEFORMATID_SIZE);
@@ -115,8 +141,8 @@ codec_ret_t WAV_Open(const file_t *file)
     }
 
     // Read the number of channels
-    // TODO: store this?
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_NBRCHANNELS_SIZE);
+    curr_file.Read(curr_file.handle, buffer, sizeof(metadata.nbr_channels));
+    metadata.nbr_channels = ((typeof(metadata.nbr_channels) *)buffer)[0];
 
     // TODO: finish WAV header
 
