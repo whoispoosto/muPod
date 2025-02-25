@@ -7,27 +7,36 @@
 
 #include "wav.h"
 
-codec_ret_t WAV_Encode(uint8_t *dst, const uint8_t *src, size_t length)
+static const file_t *curr_file = NULL;
+
+codec_ret_t WAV_Open(const file_t *file)
 {
-    // Since WAV files are already uncompressed PCM, this is very straightforward
-    for (int i = 0; i < length; ++i)
-    {
-        dst[i] = src[i];
+    if (curr_file != NULL) {
+        return CODEC_ERROR_FILE_ALREADY_OPENED;
     }
+
+    if (file == NULL) {
+        return CODEC_ERROR_FILE_IS_NULL;
+    }
+
+    curr_file = file;
+
+    // TODO: process wav header
 
     return CODEC_SUCCESS;
 }
 
-codec_ret_t WAV_Decode(uint8_t *dst, const uint8_t *src, size_t length)
+codec_ret_t WAV_Decode(void *buffer, size_t length)
 {
     // Since WAV files are already uncompressed PCM, this is very straightforward
-    for (int i = 0; i < length; ++i)
-    {
-        dst[i] = src[i];
+    fs_ret_t res = curr_file->Read(curr_file->handle, buffer, length);
+
+    if (res != FS_SUCCESS) {
+        return CODEC_ERROR_UNABLE_TO_DECODE;
     }
 
     return CODEC_SUCCESS;
 }
 
 const codec_t wav_codec =
-{ .Encode = WAV_Encode, .Decode = WAV_Decode };
+{ .Open = WAV_Open, .Decode = WAV_Decode, .DecodeFrom = WAV_DecodeFrom };

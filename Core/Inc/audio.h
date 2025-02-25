@@ -39,6 +39,8 @@ typedef enum
     AUDIO_ERROR_GENERIC = -128
 } audio_ret_t;
 
+// TODO: rename this file maybe b/c I'm getting confused btwn this and codec lol
+
 /*
  * It's bad practice to have a function pointer with, say, a void *buffer,
  * and then an implementation function pointer that defines it as a uint16_t *buffer.
@@ -54,7 +56,7 @@ typedef struct
 {
     audio_ret_t (*Open)(void);
     audio_ret_t (*Close)(void);
-    audio_ret_t (*Stream)(const void *buffer, size_t length);
+    audio_ret_t (*Stream)(void *buffer, size_t length);
 } audio_driver_t;
 
 #endif /* INC_AUDIO_H_ */

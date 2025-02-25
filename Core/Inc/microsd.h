@@ -31,14 +31,17 @@
 
 // We are using FatFS, specifically exFAT (versus something like FAT32)
 
-// TODO: purchase https://www.adafruit.com/product/4682
-
 //////
 
+// File system methods
 fs_ret_t MicroSD_Open(void);
 fs_ret_t MicroSD_Close(void);
-fs_ret_t MicroSD_Read(const char filename[], uint8_t *buffer, size_t length);
-fs_ret_t MicroSD_GetInfo(const fs_info_t *info);
+fs_ret_t MicroSD_OpenFile(file_t *file, char *filename);
+fs_ret_t MicroSD_GetInfo(fs_info_t *info);
+
+// File methods
+fs_ret_t MicroSD_File_Read(const void *handle, void *buffer, size_t length);
+// TODO: ReadFrom
 
 extern const fs_driver_t microsd_driver;
 

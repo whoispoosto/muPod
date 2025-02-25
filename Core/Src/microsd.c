@@ -62,43 +62,32 @@ fs_ret_t MicroSD_Close(void)
     return FS_SUCCESS;
 }
 
-// TODO: consider making void *buffer
-fs_ret_t MicroSD_Read(const char filename[], uint8_t *buffer, size_t length)
-{
+fs_ret_t MicroSD_OpenFile(file_t *file, char *filename) {
     if (hsd.State != HAL_SD_STATE_READY)
     {
         return FS_ERROR_UNINITIALIZED;
     }
 
+    if (file == NULL)
+    {
+	return FS_ERROR_UNABLE_TO_OPEN_FILE;
+    }
+
     // Open the file
-    FIL file;
-    if (f_open(&file, filename, FA_OPEN_EXISTING | FA_READ) != FR_OK)
+    if (f_open(file->handle, filename, FA_OPEN_EXISTING | FA_READ) != FR_OK)
     {
         return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
-    /*
-     * Read the file
-     * Length will equal *bytes_read when the return code is FR_OK
-     * See http://elm-chan.org/fsw/ff/doc/read.html
-     *
-     * Even if buffer is of type, say, uint32_t (4 bytes),
-     * f_read will work as intended.
-     * f_read uses a void *buf internally.
-     * But! Our buffer will simply read 4 bytes at a time.
-     * We just need to make sure the length is correct (i.e., it's the number of BYTES)
-     */
-
-    size_t bytes_read;
-    if (f_read(&file, buffer, length, &bytes_read) != FR_OK)
-    {
-        return FS_ERROR_UNABLE_TO_READ_FILE;
-    }
+    // As long as opening the file was successful,
+    // we can store the filename and read method in the file_t object.
+    file->filename = filename;
+    file->Read = MicroSD_File_Read;
 
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_GetInfo(const fs_info_t *info)
+fs_ret_t MicroSD_GetInfo(fs_info_t *info)
 {
     if (hsd.State != HAL_SD_STATE_READY)
     {
@@ -118,6 +107,44 @@ fs_ret_t MicroSD_GetInfo(const fs_info_t *info)
     return FS_SUCCESS;
 }
 
+fs_ret_t MicroSD_File_Read(const void *handle, void *buffer, size_t length)
+{
+    // TODO: check handle
+
+    if (buffer == NULL)
+    {
+        return FS_ERROR_UNABLE_TO_READ_FILE;
+    }
+
+    // TODO: actually, do a separate function ReadFrom that uses lseek since it's kinda slow I think
+    
+    /*
+     * Read the file
+     * Length will equal *bytes_read when the return code is FR_OK
+     * See http://elm-chan.org/fsw/ff/doc/read.html
+     *
+     * Even if buffer is of type, say, uint32_t (4 bytes),
+     * f_read will work as intended.
+     * f_read uses a void *buf internally (that is cast to a BYTE *buf so they can do pointer arithmetic).
+     * But! Our buffer will simply read 4 bytes at a time.
+     * We just need to make sure the length is correct (i.e., it's the number of BYTES)
+     */
+
+    /*size_t bytes_read;
+    if (f_read(&file, buffer, length, &bytes_read) != FR_OK)
+    {
+	return FS_ERROR_UNABLE_TO_READ_FILE;
+    }
+
+    if (bytes_read != length)
+    {
+	return FS_ERROR_BUFFER_TOO_SMALL;
+    }*/
+
+    return FS_SUCCESS;
+
+}
+
 const fs_driver_t microsd_driver =
-{ .Open = MicroSD_Open, .Close = MicroSD_Close, .Read = MicroSD_Read, .GetInfo =
+{ .Open = MicroSD_Open, .Close = MicroSD_Close, .OpenFile = MicroSD_OpenFile, .GetInfo =
         MicroSD_GetInfo, };

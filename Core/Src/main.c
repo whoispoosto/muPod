@@ -23,8 +23,10 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+
 #include "fs.h"
 #include "microsd.h"
+#include "codec.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -51,6 +53,7 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 const fs_driver_t *fs;
+const codec_t *codec;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/

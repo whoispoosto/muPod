@@ -11,16 +11,23 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "fs.h"
+
 typedef enum
 {
     CODEC_SUCCESS = 0,
+    CODEC_ERROR_FILE_ALREADY_OPENED = -1,
+    CODEC_ERROR_FILE_IS_NULL = -2,
+    CODEC_ERROR_UNABLE_TO_DECODE = -3,
     CODEC_ERROR_GENERIC = -128
 } codec_ret_t; 
 
 typedef struct
 {
-    codec_ret_t (*Encode)(uint8_t *dst, const uint8_t *src, size_t length);
-    codec_ret_t (*Decode)(uint8_t *dst, const uint8_t *src, size_t length);
+    codec_ret_t (*Open)(const file_t *file);
+    codec_ret_t (*Decode)(void *buffer, size_t length);
+    codec_ret_t (*DecodeFrom)(void *buffer, size_t start, size_t length);
+    // codec_ret_t (*Encode)(uint8_t *dst, const uint8_t *src, size_t length);
 } codec_t;
 
 #endif /* INC_CODEC_H_ */

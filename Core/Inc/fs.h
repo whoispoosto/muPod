@@ -42,8 +42,21 @@ typedef enum
     FS_ERROR_UNABLE_TO_MOUNT_FATFS = -4,
     FS_ERROR_UNABLE_TO_OPEN_FILE = -5,
     FS_ERROR_UNABLE_TO_READ_FILE = -6,
+    FS_ERROR_BUFFER_TOO_SMALL = -7,
     FS_ERROR_GENERIC = -128
 } fs_ret_t;
+
+// TODO: see https://elixir.bootlin.com/linux/v6.12.6/source/include/linux/fs.h#L2062, file_operations
+// and https://stackoverflow.com/questions/32347910/oop-in-c-implicitly-pass-self-as-parameter
+// for design inspiration.
+// ex: file->f_op->read(file, buffer, size, &offset);   'this' parameter is explicit in C unlike other languages
+// ex: typedef struct codec codec_t;   then can use codec_t in definition of the struct functions
+typedef struct
+{
+    void *handle;           // ex: FIL (fatfs)
+    char *filename;
+    fs_ret_t (*Read)(const void *handle, void *buffer, size_t length);
+} file_t;
 
 // Based on https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/structhal__sd__cardinfotypedef.html
 typedef struct
@@ -53,12 +66,11 @@ typedef struct
     uint32_t fs_size_mb;    // megabytes
 } fs_info_t;
 
-
 typedef struct
 {
-    fs_ret_t (*Open)(void);     // same as Open
+    fs_ret_t (*Open)(void);         
     fs_ret_t (*Close)(void);
-    fs_ret_t (*Read)(char filename[], uint8_t *buffer, size_t length); // TODO: make void buff, let implementation handle size
+    fs_ret_t (*OpenFile)(file_t *file, char *filename);     
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
 } fs_driver_t;
