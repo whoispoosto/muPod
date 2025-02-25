@@ -7,6 +7,8 @@
 
 #include "wav.h"
 
+#include <string.h>
+
 static file_t curr_file;
 static int file_already_opened = 0;
 
@@ -46,25 +48,6 @@ static int file_already_opened = 0;
 // Number of channels
 #define WAV_HEADER_NBRCHANNELS_SIZE 2
 
-static codec_ret_t validateIdentifier(const uint8_t bytes[], int length)
-{
-    // Read the identifier
-    uint8_t buffer[length];
-    curr_file.Read(curr_file.handle, buffer, length);
-
-    // Store the RIFF bytes
-    // const uint8_t riff[WAV_HEADER_RIFF_SIZE] = WAV_HEADER_RIFF;
-
-    // Check if all bytes match
-    for (int i = 0; i < length; ++i) {
-        if (buffer[i] != bytes[i]) {
-            return CODEC_ERROR_INVALID_FILE_FORMAT;
-        }
-    }
-
-    return CODEC_SUCCESS;
-}
-
 codec_ret_t WAV_Open(const file_t *file)
 {
     if (file_already_opened) {
@@ -80,13 +63,14 @@ codec_ret_t WAV_Open(const file_t *file)
 
     // We will never read more than the size of the WAV header
     uint8_t buffer[WAV_HEADER_SIZE];
-    codec_ret_t res;
 
     // Read the RIFF identifier
+    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_RIFF_SIZE);
     const uint8_t riff[WAV_HEADER_RIFF_SIZE] = WAV_HEADER_RIFF;
-    if ((res = validateIdentifier(riff, WAV_HEADER_RIFF_SIZE)) != CODEC_SUCCESS)
+
+    if (memcmp(buffer, riff, WAV_HEADER_RIFF_SIZE) != 0)
     {
-        return res;
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
     }
 
     // Read the file size
@@ -94,22 +78,27 @@ codec_ret_t WAV_Open(const file_t *file)
     curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FILESIZE_SIZE);
 
     // Read the file format identifier
+    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FILEFORMATID_SIZE);
     const uint8_t fileformatid[WAV_HEADER_FILEFORMATID_SIZE] = WAV_HEADER_FILEFORMATID;
-    if ((res = validateIdentifier(fileformatid, WAV_HEADER_FILEFORMATID_SIZE)) != CODEC_SUCCESS)
+
+    if (memcmp(buffer, fileformatid, WAV_HEADER_FILEFORMATID_SIZE) != 0)
     {
-        return res;
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
     }
 
     // Read the fmt identifier
+    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FMT_SIZE);
     const uint8_t fmt[WAV_HEADER_FMT_SIZE] = WAV_HEADER_FMT;
-    if ((res = validateIdentifier(fmt, WAV_HEADER_FMT_SIZE)) != CODEC_SUCCESS)
+
+    if (memcmp(buffer, fmt, WAV_HEADER_FMT_SIZE) != 0)
     {
-        return res;
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
     }
 
     // Read BlocSize
     // Remember that data is stored in little endian, so the first byte will have the LSB (idx 0)
     curr_file.Read(curr_file.handle, buffer, WAV_HEADER_BLOCSIZE_SIZE);
+
     if (buffer[0] != WAV_HEADER_BLOCSIZE)
     {
         return CODEC_ERROR_INVALID_FILE_FORMAT;
@@ -119,6 +108,7 @@ codec_ret_t WAV_Open(const file_t *file)
     // Only support PCM for now
     // TODO: add IEEE?
     curr_file.Read(curr_file.handle, buffer, WAV_HEADER_AUDIOFORMAT_SIZE);
+
     if (buffer[0] != WAV_HEADER_FORMAT_PCM)
     {
         return CODEC_ERROR_AUDIO_FORMAT_NOT_SUPPORTED;
