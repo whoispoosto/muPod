@@ -10,8 +10,6 @@
 
 #include "codec.h"
 
-#define WAV_HEADER_SIZE_BYTES 44
-
 codec_ret_t WAV_Open(const file_t *file);
 codec_ret_t WAV_Decode(void *buffer, size_t length);
 codec_ret_t WAV_DecodeFrom(void *buffer, size_t start, size_t length);
