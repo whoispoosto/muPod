@@ -19,43 +19,42 @@ typedef struct {
     uint32_t bytes_per_sec;     // Number of bytes to read per second (Frequency * BytePerBloc)
     uint16_t bytes_per_bloc;    // Number of bytes per block (NbrChannels * BitsPerSample / 8)
     uint16_t bits_per_sample;   // Number of bits per sample
-
 } wav_metadata_t;
 
-#define WAV_HEADER_SIZE 44
+#define WAV_HEADER_SIZE 44 // TODO: delete?
 
 // Identifier « RIFF »  (0x52, 0x49, 0x46, 0x46)
-#define WAV_HEADER_RIFF_SIZE 4
-#define WAV_HEADER_RIFF { 0x52, 0x49, 0x46, 0x46 }
+static const uint8_t WAV_HEADER_RIFF[] = { 0x52, 0x49, 0x46, 0x46 };
 
 // Format = « WAVE »
-#define WAV_HEADER_FILEFORMATID_SIZE 4
-#define WAV_HEADER_FILEFORMATID { 0x57, 0x41, 0x56, 0x45 }
+static const uint8_t WAV_HEADER_FILEFORMATID[] = { 0x57, 0x41, 0x56, 0x45 };
 
 // FormatBlocID
 // Identifier « fmt␣ »
-#define WAV_HEADER_FMT_SIZE 4
-#define WAV_HEADER_FMT { 0x66, 0x6D, 0x74, 0x20 }
+static const uint8_t WAV_HEADER_FMT[] = { 0x66, 0x6D, 0x74, 0x20 };
 
 // BlocSize
 // Chunk size minus 8 bytes, which is 16 bytes here  (0x10)
-#define WAV_HEADER_BLOCSIZE_SIZE 4
-#define WAV_HEADER_BLOCSIZE 0x10
+// Remember: data is stored in little-endian order!
+// static const uint8_t WAV_HEADER_BLOCSIZE[] = { 0x10, 0x0, 0x0, 0x0 };
+static const uint32_t WAV_HEADER_BLOCSIZE = 0x10;
 
 // AudioFormat
 // Audio format (1: PCM integer, 3: IEEE 754 float)
-#define WAV_HEADER_AUDIOFORMAT_SIZE 2
-#define WAV_HEADER_FORMAT_PCM 1
-#define WAV_HEADER_FORMAT_IEEE754 3
-
-static file_t curr_file;
-static wav_metadata_t metadata;
-static int file_already_opened = 0;
+static const uint16_t WAV_HEADER_AUDIOFORMAT_PCM = 1;
+static const uint16_t WAV_HEADER_AUDIOFORMAT_IEEE754 = 3;
 
 /*
  * Macros are really interesting!
  *
  * You can do curr_file.field, and it automatically expands to get the actual field
+ *
+ * #define STORE_METADATA_FIELD(meta, field, file) \
+    do { \
+        uint8_t _STORE_METADATA_BUFFER[sizeof(meta.field)]; \
+        file.Read(file.handle, _STORE_METADATA_BUFFER, sizeof(meta.field)); \
+        memcpy(&meta.field, _STORE_METADATA_BUFFER, sizeof(meta.field)); \
+    } while (0)
  *
  * the do {} while (0) loop ensures that this block always works
  * for example, if there wasn't the do while, and this was used in a single-line if,
@@ -63,18 +62,80 @@ static int file_already_opened = 0;
  * The do {} while (0) loop also scopes things nicely for the sake of local variables
  *
  * Linux kernel even does stuff like #define FIELD_SIZEOF(t, f) (sizeof(((t*)0)->f))
+ *
+ * Inline functions are very similar but don't have cool features like parameter substitution.
+ * They have type safety though!
  */
-#define STORE_METADATA_FIELD(field) \
-    do { \
-        uint8_t _STORE_METADATA_BUFFER[sizeof(metadata.field)]; \
-        curr_file.Read(curr_file.handle, _STORE_METADATA_BUFFER, sizeof(metadata.field)); \
-        memcpy(&metadata.field, _STORE_METADATA_BUFFER, sizeof(metadata.field)); \
-    } while (0)
+
+
+#define LEN(arr) sizeof(arr) / sizeof(arr[0])
+
+// Inspired by RCCHECK from ROS
+#define WAV_ERR(call) { codec_ret_t res = call; if (res != CODEC_SUCCESS) { return res; } }
+
+#define FILE_NOT_OPENED 0
+#define FILE_OPENED 1
+
+#define BUFFERS_MATCH 0
+
+static file_t curr_file;
+static wav_metadata_t metadata;
+static int file_opened = FILE_NOT_OPENED;
+
+static inline codec_ret_t VALIDATE_IDENTIFIER(const uint8_t *identifier, size_t length, const file_t *file)
+{
+    // We can't use sizeof(header) within this function
+    // because C passes arrays by pointer.
+    // So, the compile-time logic of sizeof() is only available in the stack frame
+    // where the array is actually declared.
+    // Thus, we explicitly pass in length.
+
+    uint8_t buffer[length];
+
+    if (file->Read(file->handle, buffer, length) != FS_SUCCESS)
+    {
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
+    }
+
+    if (memcmp(buffer, identifier, length) != BUFFERS_MATCH)
+    {
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
+    }
+
+    return CODEC_SUCCESS;
+}
+
+/*
+ * We have two options: void pointers or specific pointers with overloading
+ * Since we KNOW the size will be one of two pointers (uint16_t or uint32_t -- WAV specification isn't changing),
+ * it makes way more sense to ensure type safety and use specific pointers.
+ * If the pointer could be one of many, many types, then void pointers with memcpy makes sense.
+ * Since the endianness of WAV and STM32 match, memcpy works fine.
+ */
+static inline codec_ret_t STORE_METADATA_FIELD_32(uint32_t *field, const file_t *file)
+{
+    if (file->Read(file->handle, &field, sizeof(uint32_t)) != FS_SUCCESS)
+    {
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
+    }
+
+    return CODEC_SUCCESS;
+}
+
+static inline codec_ret_t STORE_METADATA_FIELD_16(uint16_t *field, const file_t *file)
+{
+    if (file->Read(file->handle, &field, sizeof(uint16_t)) != FS_SUCCESS)
+    {
+        return CODEC_ERROR_INVALID_FILE_FORMAT;
+    }
+
+    return CODEC_SUCCESS;
+}
 
 codec_ret_t WAV_Open(const file_t *file)
 {
-    if (file_already_opened) {
-        return CODEC_ERROR_FILE_ALREADY_OPENED;
+    if (file_opened) {
+        return CODEC_ERROR_file_opened;
     }
 
     if (file == NULL) {
@@ -82,67 +143,44 @@ codec_ret_t WAV_Open(const file_t *file)
     }
 
     curr_file = *file;
-    file_already_opened = 1;
-
-    // We will never read more than the size of the WAV header
-    uint8_t buffer[WAV_HEADER_SIZE];
+    file_opened = FILE_OPENED;
 
     // Read the RIFF identifier
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_RIFF_SIZE);
-    const uint8_t riff[WAV_HEADER_RIFF_SIZE] = WAV_HEADER_RIFF;
-
-    // memcmp returns 0 when all bytes match
-    if (memcmp(buffer, riff, WAV_HEADER_RIFF_SIZE) != 0)
-    {
-        return CODEC_ERROR_INVALID_FILE_FORMAT;
-    }
+    WAV_ERR(VALIDATE_IDENTIFIER(WAV_HEADER_RIFF, LEN(WAV_HEADER_RIFF), &curr_file));
 
     // Read the file size
-    // curr_file.Read(curr_file.handle, buffer, sizeof(metadata.file_size));
-    // metadata.file_size = ((uint32_t *)buffer)[0];
-    // TODO: make sure macro works
-    STORE_METADATA_FIELD(file_size);
+    WAV_ERR(STORE_METADATA_FIELD_32(&metadata.file_size, &curr_file));
 
     // Read the file format identifier
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FILEFORMATID_SIZE);
-    const uint8_t fileformatid[WAV_HEADER_FILEFORMATID_SIZE] = WAV_HEADER_FILEFORMATID;
-
-    if (memcmp(buffer, fileformatid, WAV_HEADER_FILEFORMATID_SIZE) != 0)
-    {
-        return CODEC_ERROR_INVALID_FILE_FORMAT;
-    }
+    WAV_ERR(VALIDATE_IDENTIFIER(WAV_HEADER_FILEFORMATID, LEN(WAV_HEADER_FILEFORMATID), &curr_file));
 
     // Read the fmt identifier
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_FMT_SIZE);
-    const uint8_t fmt[WAV_HEADER_FMT_SIZE] = WAV_HEADER_FMT;
-
-    if (memcmp(buffer, fmt, WAV_HEADER_FMT_SIZE) != 0)
-    {
-        return CODEC_ERROR_INVALID_FILE_FORMAT;
-    }
+    WAV_ERR(VALIDATE_IDENTIFIER(WAV_HEADER_FMT, LEN(WAV_HEADER_FMT), &curr_file));
 
     // Read BlocSize
-    // Remember that data is stored in little endian, so the first byte will have the LSB (idx 0)
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_BLOCSIZE_SIZE);
-
-    if (buffer[0] != WAV_HEADER_BLOCSIZE)
-    {
-        return CODEC_ERROR_INVALID_FILE_FORMAT;
-    }
+    // Cast the uint32_t value to a uint8_t pointer
+    // This is fine because everything is still tied to the length parameter
+    WAV_ERR(VALIDATE_IDENTIFIER((const uint8_t *)&WAV_HEADER_BLOCSIZE, sizeof(WAV_HEADER_BLOCSIZE), &curr_file));
 
     // Read AudioFormat
     // Only support PCM for now
-    // TODO: add IEEE?
-    curr_file.Read(curr_file.handle, buffer, WAV_HEADER_AUDIOFORMAT_SIZE);
-
-    if (buffer[0] != WAV_HEADER_FORMAT_PCM)
-    {
-        return CODEC_ERROR_AUDIO_FORMAT_NOT_SUPPORTED;
-    }
+    // TODO: add IEEE. Would change this call to instead store the metadata field
+    WAV_ERR(VALIDATE_IDENTIFIER((const uint8_t *)&WAV_HEADER_AUDIOFORMAT_PCM, sizeof(WAV_HEADER_AUDIOFORMAT_PCM), &curr_file));
 
     // Read the number of channels
-    curr_file.Read(curr_file.handle, buffer, sizeof(metadata.nbr_channels));
-    metadata.nbr_channels = ((typeof(metadata.nbr_channels) *)buffer)[0];
+    WAV_ERR(STORE_METADATA_FIELD_16(&metadata.nbr_channels, &curr_file));
+
+    // Read the frequency
+    WAV_ERR(STORE_METADATA_FIELD_32(&metadata.frequency, &curr_file));
+
+    // Read the number of bytes per second
+    WAV_ERR(STORE_METADATA_FIELD_32(&metadata.bytes_per_sec, &curr_file));
+
+    // Read the number of bytes per block
+    WAV_ERR(STORE_METADATA_FIELD_16(&metadata.bytes_per_bloc, &curr_file));
+
+    // Read the number of bits per sample
+    WAV_ERR(STORE_METADATA_FIELD_16(&metadata.bits_per_sample, &curr_file));
 
     // TODO: finish WAV header
 
@@ -151,13 +189,13 @@ codec_ret_t WAV_Open(const file_t *file)
 
 codec_ret_t WAV_Close(void)
 {
-    if (!file_already_opened) {
+    if (!file_opened) {
         return CODEC_ERROR_NO_FILE_OPENED;
     }
 
     // No need to actually do anything to the curr_file object
     // We can simply change this flag so the Open function knows it can open new files
-    file_already_opened = 0;
+    file_opened = FILE_NOT_OPENED;
 
     return CODEC_SUCCESS;
 }
