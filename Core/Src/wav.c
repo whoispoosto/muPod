@@ -42,7 +42,7 @@ static const uint32_t WAV_HEADER_BLOCSIZE = 0x10;
 // AudioFormat
 // Audio format (1: PCM integer, 3: IEEE 754 float)
 static const uint16_t WAV_HEADER_AUDIOFORMAT_PCM = 1;
-static const uint16_t WAV_HEADER_AUDIOFORMAT_IEEE754 = 3;
+// static const uint16_t WAV_HEADER_AUDIOFORMAT_IEEE754 = 3;
 
 /*
  * Macros are really interesting!
@@ -135,7 +135,7 @@ static inline codec_ret_t STORE_METADATA_FIELD_16(uint16_t *field, const file_t 
 codec_ret_t WAV_Open(const file_t *file)
 {
     if (file_opened) {
-        return CODEC_ERROR_file_opened;
+        return CODEC_ERROR_FILE_ALREADY_OPENED;
     }
 
     if (file == NULL) {
