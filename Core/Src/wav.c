@@ -19,6 +19,7 @@ typedef struct {
     uint32_t bytes_per_sec;     // Number of bytes to read per second (Frequency * BytePerBloc)
     uint16_t bytes_per_bloc;    // Number of bytes per block (NbrChannels * BitsPerSample / 8)
     uint16_t bits_per_sample;   // Number of bits per sample
+    uint32_t data_size;         // SampledData size
 } wav_metadata_t;
 
 #define WAV_HEADER_SIZE 44 // TODO: delete?
@@ -44,6 +45,10 @@ static const uint32_t WAV_HEADER_BLOCSIZE = 0x10;
 static const uint16_t WAV_HEADER_AUDIOFORMAT_PCM = 1;
 // static const uint16_t WAV_HEADER_AUDIOFORMAT_IEEE754 = 3;
 
+// DataBlocID
+// Identifier « data »
+static const uint8_t WAV_HEADER_DATABLOCID[] = { 0x64, 0x61, 0x74, 0x61 };
+
 /*
  * Macros are really interesting!
  *
@@ -68,7 +73,7 @@ static const uint16_t WAV_HEADER_AUDIOFORMAT_PCM = 1;
  */
 
 
-#define LEN(arr) sizeof(arr) / sizeof(arr[0])
+#define LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
 // Inspired by RCCHECK from ROS
 #define WAV_ERR(call) { codec_ret_t res = call; if (res != CODEC_SUCCESS) { return res; } }
@@ -182,7 +187,11 @@ codec_ret_t WAV_Open(const file_t *file)
     // Read the number of bits per sample
     WAV_ERR(STORE_METADATA_FIELD_16(&metadata.bits_per_sample, &curr_file));
 
-    // TODO: finish WAV header
+    // Read DataBlocID
+    WAV_ERR(VALIDATE_IDENTIFIER(WAV_HEADER_DATABLOCID, LEN(WAV_HEADER_DATABLOCID), &curr_file));
+
+    // Read DataSize
+    WAV_ERR(STORE_METADATA_FIELD_32(&metadata.data_size, &curr_file));
 
     return CODEC_SUCCESS;
 }
