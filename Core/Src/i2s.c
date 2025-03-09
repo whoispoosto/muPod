@@ -7,7 +7,8 @@
 #include "i2s.h"
 #include "main.h"
 
-extern I2S_HandleTypeDef hi2s2;
+// TODO:
+// extern I2S_HandleTypeDef hi2s2;
 
 audio_ret_t I2S_Open(void) {
     // TODO
@@ -26,11 +27,12 @@ audio_ret_t I2S_Stream(void *buffer, size_t length) {
         return AUDIO_ERROR_NULL_BUFFER;
     }
 
-    uint16_t *data = (uint16_t *)buffer;
+    // uint16_t *data = (uint16_t *)buffer;
 
-    if (HAL_I2S_Transmit_IT(&hi2s2, data, length) != HAL_OK) {
+    // TODO
+    /* if (HAL_I2S_Transmit_IT(&hi2s2, data, length) != HAL_OK) {
         return AUDIO_ERROR_UNABLE_TO_STREAM_BUFFER;
-    }
+    } */
 
     return AUDIO_SUCCESS;
 }

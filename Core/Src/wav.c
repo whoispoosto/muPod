@@ -198,7 +198,7 @@ codec_ret_t WAV_Open(const file_t *file)
 
 codec_ret_t WAV_Close(void)
 {
-    if (!file_opened) {
+    if (file_opened == FILE_NOT_OPENED) {
         return CODEC_ERROR_NO_FILE_OPENED;
     }
 

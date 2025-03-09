@@ -40,7 +40,7 @@ fs_ret_t MicroSD_OpenFile(file_t *file, char *filename);
 fs_ret_t MicroSD_GetInfo(fs_info_t *info);
 
 // File methods
-fs_ret_t MicroSD_File_Read(const void *handle, void *buffer, size_t length);
+fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length);
 // TODO: ReadFrom
 
 extern const fs_driver_t microsd_driver;

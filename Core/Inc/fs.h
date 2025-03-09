@@ -42,7 +42,6 @@ typedef enum
     FS_ERROR_UNABLE_TO_MOUNT_FATFS = -4,
     FS_ERROR_UNABLE_TO_OPEN_FILE = -5,
     FS_ERROR_UNABLE_TO_READ_FILE = -6,
-    FS_ERROR_BUFFER_TOO_SMALL = -7,
     FS_ERROR_GENERIC = -128
 } fs_ret_t;
 
@@ -55,7 +54,7 @@ typedef struct
 {
     void *handle;           // ex: FIL (fatfs)
     char *filename;
-    fs_ret_t (*Read)(const void *handle, void *buffer, size_t length);
+    fs_ret_t (*Read)(void *handle, void *buffer, size_t length);
 } file_t;
 
 // Based on https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/structhal__sd__cardinfotypedef.html
@@ -70,7 +69,8 @@ typedef struct
 {
     fs_ret_t (*Open)(void);         
     fs_ret_t (*Close)(void);
-    fs_ret_t (*OpenFile)(file_t *file, char *filename);     
+    fs_ret_t (*OpenFile)(file_t *file, char *filename);
+    // TODO: CloseFile w/ free()
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
 } fs_driver_t;

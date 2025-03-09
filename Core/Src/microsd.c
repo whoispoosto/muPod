@@ -13,7 +13,7 @@
 extern SD_HandleTypeDef hsd;
 
 // Defined in source file for encapsulation
-#define BYTES_TO_MEGABYTES 1024 * 1024
+#define MEGABYTES_TO_BYTES (1024 * 1024)
 #define DELAYED_MOUNT 0
 
 // TODO: check for NULL pointers
@@ -31,10 +31,11 @@ fs_ret_t MicroSD_Open(void)
     }
 
     // Now we can switch to 4-bit bus width
-    if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
+    // TODO: configure 4-bit on hardware
+    /* if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
     {
         return FS_ERROR_UNABLE_TO_INIT;
-    }
+    } */
 
     // Mount the FatFS file system
     // DELAYED_MOUNT (= 0) is default, so I just went with that
@@ -70,14 +71,28 @@ fs_ret_t MicroSD_OpenFile(file_t *file, char *filename) {
 
     if (file == NULL)
     {
-	return FS_ERROR_UNABLE_TO_OPEN_FILE;
+        return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
     // Open the file
-    if (f_open(file->handle, filename, FA_OPEN_EXISTING | FA_READ) != FR_OK)
+    // Since we use a pointer in the file struct for the handle,
+    // we can't pass that directly to f_open.
+    // We need some sort of allocated FIL structure!
+    // Since this is a method that returns a pointer, we can't allocate it on the stack
+    // since it'll be cleared once this stack frame is over.
+    // Also, we want to be able to open multiple files, so we can't use a static variable.
+    // So, we use malloc.
+    FIL *handle = malloc(sizeof(FIL));
+
+    if (f_open(handle, filename, FA_OPEN_EXISTING | FA_READ) != FR_OK)
     {
+        free(handle);
         return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
+
+    // Swap pointers and remove dangling pointer
+    file->handle = handle;
+    handle = NULL;
 
     // As long as opening the file was successful,
     // we can store the filename and read method in the file_t object.
@@ -99,24 +114,27 @@ fs_ret_t MicroSD_GetInfo(fs_info_t *info)
     info_temp.block_size_b = hsd.SdCard.BlockSize;
     info_temp.num_blocks = hsd.SdCard.BlockNbr;
     info_temp.fs_size_mb =
-            (double) (info_temp.block_size_b / BYTES_TO_MEGABYTES)
-                    * info_temp.num_blocks;
+            ((double) (info_temp.block_size_b)
+            / MEGABYTES_TO_BYTES) * info_temp.num_blocks;
 
     *info = info_temp;
 
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_File_Read(const void *handle, void *buffer, size_t length)
+fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length)
 {
-    // TODO: check handle
+    if (handle == NULL)
+    {
+        return FS_ERROR_UNABLE_TO_READ_FILE;
+    }
 
     if (buffer == NULL)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
 
-    // TODO: actually, do a separate function ReadFrom that uses lseek since it's kinda slow I think
+    // TODO: do a separate function ReadFrom that uses lseek since it's kinda slow I think
     
     /*
      * Read the file
@@ -130,19 +148,14 @@ fs_ret_t MicroSD_File_Read(const void *handle, void *buffer, size_t length)
      * We just need to make sure the length is correct (i.e., it's the number of BYTES)
      */
 
-    /*size_t bytes_read;
-    if (f_read(&file, buffer, length, &bytes_read) != FR_OK)
+    size_t bytes_read;
+
+    if (f_read((FIL *)handle, buffer, length, &bytes_read) != FR_OK)
     {
-	return FS_ERROR_UNABLE_TO_READ_FILE;
+        return FS_ERROR_UNABLE_TO_READ_FILE;
     }
 
-    if (bytes_read != length)
-    {
-	return FS_ERROR_BUFFER_TOO_SMALL;
-    }*/
-
     return FS_SUCCESS;
-
 }
 
 const fs_driver_t microsd_driver =
