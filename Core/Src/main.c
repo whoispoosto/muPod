@@ -144,7 +144,7 @@ int main(void)
     }
 
     char buffer[256];
-    if (file.Read(file.handle, &buffer, 256) != FS_SUCCESS)
+    if (file.Read(&file, &buffer, 256) != FS_SUCCESS)
     {
         Error_Handler();
     }
@@ -156,7 +156,6 @@ int main(void)
         ++i;
     }
     printf("\r\n");
-
 
   /* USER CODE END 2 */
 

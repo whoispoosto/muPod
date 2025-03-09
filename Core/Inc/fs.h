@@ -42,6 +42,7 @@ typedef enum
     FS_ERROR_UNABLE_TO_MOUNT_FATFS = -4,
     FS_ERROR_UNABLE_TO_OPEN_FILE = -5,
     FS_ERROR_UNABLE_TO_READ_FILE = -6,
+    FS_ERROR_UNABLE_TO_CLOSE_FILE = -7,
     FS_ERROR_GENERIC = -128
 } fs_ret_t;
 
@@ -50,12 +51,14 @@ typedef enum
 // for design inspiration.
 // ex: file->f_op->read(file, buffer, size, &offset);   'this' parameter is explicit in C unlike other languages
 // ex: typedef struct codec codec_t;   then can use codec_t in definition of the struct functions
-typedef struct
+typedef struct file file_t;
+struct file
 {
     void *handle;           // ex: FIL (fatfs)
     char *filename;
-    fs_ret_t (*Read)(void *handle, void *buffer, size_t length);
-} file_t;
+    // TODO: change this syntax to take a pointer to file_t (name it struct file_s so it's not anonymous)
+    fs_ret_t (*Read)(file_t *file, void *buffer, size_t length);
+};
 
 // Based on https://www.disca.upv.es/aperles/arm_cortex_m3/llibre/st/STM32F439xx_User_Manual/structhal__sd__cardinfotypedef.html
 typedef struct
@@ -70,7 +73,7 @@ typedef struct
     fs_ret_t (*Open)(void);         
     fs_ret_t (*Close)(void);
     fs_ret_t (*OpenFile)(file_t *file, char *filename);
-    // TODO: CloseFile w/ free()
+    fs_ret_t (*CloseFile)(file_t *file);
     // TODO: fs_ret_t (*Write)(const uint8_t *buffer, size_t length);
     fs_ret_t (*GetInfo)(fs_info_t *info);
 } fs_driver_t;

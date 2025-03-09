@@ -33,9 +33,9 @@ fs_ret_t MicroSD_Open(void)
     // Now we can switch to 4-bit bus width
     // TODO: configure 4-bit on hardware
     /* if (HAL_SD_ConfigWideBusOperation(&hsd, SDIO_BUS_WIDE_4B) != HAL_OK)
-    {
-        return FS_ERROR_UNABLE_TO_INIT;
-    } */
+     {
+     return FS_ERROR_UNABLE_TO_INIT;
+     } */
 
     // Mount the FatFS file system
     // DELAYED_MOUNT (= 0) is default, so I just went with that
@@ -63,7 +63,8 @@ fs_ret_t MicroSD_Close(void)
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_OpenFile(file_t *file, char *filename) {
+fs_ret_t MicroSD_OpenFile(file_t *file, char *filename)
+{
     if (hsd.State != HAL_SD_STATE_READY)
     {
         return FS_ERROR_UNINITIALIZED;
@@ -90,14 +91,27 @@ fs_ret_t MicroSD_OpenFile(file_t *file, char *filename) {
         return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
-    // Swap pointers and remove dangling pointer
+    // Store handle pointer
     file->handle = handle;
-    handle = NULL;
 
     // As long as opening the file was successful,
     // we can store the filename and read method in the file_t object.
     file->filename = filename;
     file->Read = MicroSD_File_Read;
+
+    return FS_SUCCESS;
+}
+
+fs_ret_t MicroSD_CloseFile(file_t *file)
+{
+    if (file == NULL || file->handle == NULL)
+    {
+        return FS_ERROR_UNABLE_TO_CLOSE_FILE;
+    }
+
+    // Free memory and remove dangling pointer
+    free(file->handle);
+    file->handle = NULL;
 
     return FS_SUCCESS;
 }
@@ -113,8 +127,7 @@ fs_ret_t MicroSD_GetInfo(fs_info_t *info)
 
     info_temp.block_size_b = hsd.SdCard.BlockSize;
     info_temp.num_blocks = hsd.SdCard.BlockNbr;
-    info_temp.fs_size_mb =
-            ((double) (info_temp.block_size_b)
+    info_temp.fs_size_mb = ((double) (info_temp.block_size_b)
             / MEGABYTES_TO_BYTES) * info_temp.num_blocks;
 
     *info = info_temp;
@@ -122,9 +135,9 @@ fs_ret_t MicroSD_GetInfo(fs_info_t *info)
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length)
+fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length)
 {
-    if (handle == NULL)
+    if (file == NULL)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
@@ -135,7 +148,7 @@ fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length)
     }
 
     // TODO: do a separate function ReadFrom that uses lseek since it's kinda slow I think
-    
+
     /*
      * Read the file
      * Length will equal *bytes_read when the return code is FR_OK
@@ -150,7 +163,7 @@ fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length)
 
     size_t bytes_read;
 
-    if (f_read((FIL *)handle, buffer, length, &bytes_read) != FR_OK)
+    if (f_read((FIL*)file->handle, buffer, length, &bytes_read) != FR_OK)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
@@ -159,5 +172,5 @@ fs_ret_t MicroSD_File_Read(void *handle, void *buffer, size_t length)
 }
 
 const fs_driver_t microsd_driver =
-{ .Open = MicroSD_Open, .Close = MicroSD_Close, .OpenFile = MicroSD_OpenFile, .GetInfo =
-        MicroSD_GetInfo, };
+{ .Open = MicroSD_Open, .Close = MicroSD_Close, .OpenFile = MicroSD_OpenFile,
+        .CloseFile = MicroSD_CloseFile, .GetInfo = MicroSD_GetInfo, };
