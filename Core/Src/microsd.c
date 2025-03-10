@@ -14,12 +14,16 @@ extern SD_HandleTypeDef hsd;
 
 // Defined in source file for encapsulation
 #define MEGABYTES_TO_BYTES (1024 * 1024)
+
+// Delayed mount means that the FatFS library does not check if an SD card is mounted until it's needed.
+// Forced mount means that the library immediately checks if there is an SD card mounted.
 #define DELAYED_MOUNT 0
+#define FORCED_MOUNT 1
 
 // TODO: check for NULL pointers
 
 // NOTE: this should be called after the auto-generated STM32 code is run, i.e., in MX_SDIO_SD_Init
-fs_ret_t MicroSD_Open(void)
+fs_ret_t MicroSD_Open(fs_driver_t *fs)
 {
     // Due to some internal quirks with STM32's implementation of SDIO,
     // we must initialize the bus width to be 1-bit.
@@ -40,10 +44,16 @@ fs_ret_t MicroSD_Open(void)
     // Mount the FatFS file system
     // DELAYED_MOUNT (= 0) is default, so I just went with that
     // See http://elm-chan.org/fsw/ff/doc/mount.html
-    if (f_mount(&SDFatFS, (TCHAR const*) SDPath, DELAYED_MOUNT) != FR_OK)
+
+    if (f_mount(&SDFatFS, (TCHAR const*) SDPath, FORCED_MOUNT) != FR_OK)
     {
-        return FS_ERROR_UNABLE_TO_MOUNT_FATFS;
+        return FS_ERROR_UNABLE_TO_MOUNT;
     }
+
+    fs->block_size_b = hsd.SdCard.BlockSize;
+    fs->num_blocks = hsd.SdCard.BlockNbr;
+    fs->fs_size_mb = ((double) (fs->block_size_b) / MEGABYTES_TO_BYTES)
+            * fs->num_blocks;
 
     return FS_SUCCESS;
 }
@@ -91,13 +101,9 @@ fs_ret_t MicroSD_OpenFile(file_t *file, char *filename)
         return FS_ERROR_UNABLE_TO_OPEN_FILE;
     }
 
-    // Store handle pointer
+    // Store handle pointer and filename
     file->handle = handle;
-
-    // As long as opening the file was successful,
-    // we can store the filename and read method in the file_t object.
     file->filename = filename;
-    file->Read = MicroSD_File_Read;
 
     return FS_SUCCESS;
 }
@@ -116,28 +122,9 @@ fs_ret_t MicroSD_CloseFile(file_t *file)
     return FS_SUCCESS;
 }
 
-fs_ret_t MicroSD_GetInfo(fs_info_t *info)
+fs_ret_t MicroSD_ReadFile(file_t *file, void *buffer, size_t length)
 {
-    if (hsd.State != HAL_SD_STATE_READY)
-    {
-        return FS_ERROR_UNINITIALIZED;
-    }
-
-    fs_info_t info_temp;
-
-    info_temp.block_size_b = hsd.SdCard.BlockSize;
-    info_temp.num_blocks = hsd.SdCard.BlockNbr;
-    info_temp.fs_size_mb = ((double) (info_temp.block_size_b)
-            / MEGABYTES_TO_BYTES) * info_temp.num_blocks;
-
-    *info = info_temp;
-
-    return FS_SUCCESS;
-}
-
-fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length)
-{
-    if (file == NULL)
+    if (file == NULL || file->handle == NULL)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
@@ -146,8 +133,6 @@ fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
-
-    // TODO: do a separate function ReadFrom that uses lseek since it's kinda slow I think
 
     /*
      * Read the file
@@ -161,9 +146,10 @@ fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length)
      * We just need to make sure the length is correct (i.e., it's the number of BYTES)
      */
 
+    // TODO: return this? since it can be less than length of buffer (if buffer is too large)
     size_t bytes_read;
 
-    if (f_read((FIL*)file->handle, buffer, length, &bytes_read) != FR_OK)
+    if (f_read((FIL*) file->handle, buffer, length, &bytes_read) != FR_OK)
     {
         return FS_ERROR_UNABLE_TO_READ_FILE;
     }
@@ -171,6 +157,9 @@ fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length)
     return FS_SUCCESS;
 }
 
-const fs_driver_t microsd_driver =
+const struct fs_operations fs_ops =
 { .Open = MicroSD_Open, .Close = MicroSD_Close, .OpenFile = MicroSD_OpenFile,
-        .CloseFile = MicroSD_CloseFile, .GetInfo = MicroSD_GetInfo, };
+        .CloseFile = MicroSD_CloseFile, .ReadFile = MicroSD_ReadFile };
+
+fs_driver_t microsd_driver =
+{ .ops = &fs_ops };

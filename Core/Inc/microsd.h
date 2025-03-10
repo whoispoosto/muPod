@@ -34,16 +34,15 @@
 //////
 
 // File system methods
-fs_ret_t MicroSD_Open(void);
+fs_ret_t MicroSD_Open(fs_driver_t *fs);
 fs_ret_t MicroSD_Close(void);
 fs_ret_t MicroSD_OpenFile(file_t *file, char *filename);
 fs_ret_t MicroSD_CloseFile(file_t *file);
-fs_ret_t MicroSD_GetInfo(fs_info_t *info);
+fs_ret_t MicroSD_ReadFile(file_t *file, void *buffer, size_t length);
 
 // File methods
 fs_ret_t MicroSD_File_Read(file_t *file, void *buffer, size_t length);
-// TODO: ReadFrom
 
-extern const fs_driver_t microsd_driver;
+extern fs_driver_t microsd_driver;
 
 #endif /* INC_MICROSD_H_ */

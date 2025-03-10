@@ -1,0 +1,5 @@
+../Core/Src/microsd.c:22:10:MicroSD_Open	3
+../Core/Src/microsd.c:56:10:MicroSD_Close	2
+../Core/Src/microsd.c:71:10:MicroSD_OpenFile	4
+../Core/Src/microsd.c:112:10:MicroSD_CloseFile	3
+../Core/Src/microsd.c:126:10:MicroSD_File_Read	4

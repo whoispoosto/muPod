@@ -1,0 +1,5 @@
+../Core/Src/microsd.c:22:10:MicroSD_Open	24	static
+../Core/Src/microsd.c:56:10:MicroSD_Close	8	static
+../Core/Src/microsd.c:71:10:MicroSD_OpenFile	24	static
+../Core/Src/microsd.c:112:10:MicroSD_CloseFile	8	static
+../Core/Src/microsd.c:126:10:MicroSD_File_Read	16	static

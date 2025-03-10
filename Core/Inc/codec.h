@@ -13,6 +13,7 @@
 
 #include "fs.h"
 
+// TODO: remove the file-related errors?
 typedef enum
 {
     CODEC_SUCCESS = 0,
@@ -26,8 +27,9 @@ typedef enum
 
 typedef struct
 {
-    codec_ret_t (*Open)(const file_t *file);
+    codec_ret_t (*Open)(void);
     codec_ret_t (*Close)(void);
+    codec_ret_t (*ValidateHeader)(const void *buffer, void *metadata, size_t *bytes_read);
     codec_ret_t (*Decode)(void *buffer, size_t length);
     codec_ret_t (*DecodeFrom)(void *buffer, size_t start, size_t length);
     // codec_ret_t (*Encode)(uint8_t *dst, const uint8_t *src, size_t length);

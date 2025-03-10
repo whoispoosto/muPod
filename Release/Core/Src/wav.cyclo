@@ -1,0 +1,6 @@
+../Core/Src/wav.c:212:13:WAV_Decode	1
+../Core/Src/wav.c:130:27:STORE_METADATA_FIELD_16.constprop	1
+../Core/Src/wav.c:120:27:STORE_METADATA_FIELD_32.constprop	1
+../Core/Src/wav.c:90:27:VALIDATE_IDENTIFIER.constprop	2
+../Core/Src/wav.c:140:13:WAV_Open	15
+../Core/Src/wav.c:199:13:WAV_Close	2

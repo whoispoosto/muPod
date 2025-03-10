@@ -1,0 +1,3 @@
+../Core/Src/i2s.c:13:13:I2S_Open	0	static
+../Core/Src/i2s.c:25:13:I2S_Stream	0	static
+../Core/Src/i2s.c:19:13:I2S_Close	0	static
