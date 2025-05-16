@@ -84,6 +84,7 @@ static inline codec_ret_t VALIDATE_IDENTIFIER(const uint8_t *identifier, const u
     }
 
     // Increment the buffer pointer so it is repositioned to read the next portion of data
+    // Shoutout CUDA C for introducing me to the idea of pointers to pointers!
     *buffer += length;
 
     return CODEC_SUCCESS;
